@@ -42,6 +42,11 @@ class NoteCard extends StatelessWidget {
               style: const TextStyle(color: Colors.white60, fontSize: 12),
             ),
           ],
+          const SizedBox(height: 8),
+          Text(
+            "${note.createdDate.year}-${note.createdDate.month.toString().padLeft(2, '0')}-${note.createdDate.day.toString().padLeft(2, '0')}",
+            style: const TextStyle(color: Colors.white60, fontSize: 10),
+          ),
         ],
       ),
     );

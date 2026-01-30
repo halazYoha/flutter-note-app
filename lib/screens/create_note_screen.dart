@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/note.dart';
 import '../services/database_service.dart';
+import '../services/pdf_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/telegram_provider.dart';
+import 'connect_telegram_screen.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   final DatabaseService dbService;
@@ -78,6 +82,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       color: selectedColor.value,
       tags: tags,
       pinned: widget.note?.pinned ?? false,
+      createdDate: widget.note?.createdDate, // Preserve original date
     );
 
     if (widget.note != null) {
@@ -100,10 +105,15 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     }
   }
 
+  String _formatDate(DateTime date) {
+    // Basic formatting: YYYY-MM-DD HH:MM
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F4F9),
+      // backgroundColor: const Color(0xFFF8F4F9),
 
       // ---------------- APP BAR ----------------
       appBar: AppBar(
@@ -113,7 +123,17 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         title: const Text("New Note"),
         actions: [
           TextButton.icon(
-            onPressed: null,
+            onPressed: () async {
+              final currentNote = Note(
+                id: widget.note?.id ?? 'temp',
+                title: titleController.text.trim(),
+                content: contentController.text.trim(),
+                color: selectedColor.value,
+                tags: tags,
+                createdDate: widget.note?.createdDate,
+              );
+              await PdfService().exportNoteToPdf(currentNote);
+            },
             icon: const Icon(Icons.picture_as_pdf_outlined),
             label: const Text("Export as PDF"),
           ),
@@ -133,17 +153,24 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: "Title",
+                hintStyle: TextStyle(
+                  color: Colors.black.withOpacity(0.4),
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
                 border: InputBorder.none,
               ),
             ),
 
             const SizedBox(height: 6),
 
-            const Text(
-              "Created just now",
-              style: TextStyle(color: Colors.grey),
+            Text(
+              widget.note != null 
+                  ? "Created: ${_formatDate(widget.note!.createdDate)}"
+                  : "Created just now",
+              style: const TextStyle(color: Colors.grey),
             ),
 
             const SizedBox(height: 20),
@@ -256,32 +283,91 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
             const SizedBox(height: 24),
 
-            // SAVE BUTTON
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: isSaving ? null : saveNote,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6A5AE0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: isSaving
-                    ? const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      )
-                    : const Text(
-                        "Save Note",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color:Colors.white,
+            
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isSaving ? null : saveNote,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6A5AE0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-              ),
+                      child: isSaving
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
+                          : const Text(
+                              "Save Note",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color:Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Consumer<TelegramProvider>(
+                    builder: (context, telegramProvider, child) {
+                      final isConnected = telegramProvider.isConnected;
+                      return SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ConnectTelegramScreen(),
+                                    ),
+                                  );
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isConnected 
+                                ? Colors.green.withOpacity(0.2) 
+                                : const Color(0xFF2196F3), // Telegram Blue
+                            foregroundColor: isConnected ? Colors.green : Colors.white,
+                            disabledBackgroundColor: Colors.green.withOpacity(0.1),
+                            disabledForegroundColor: Colors.green,
+                            elevation: isConnected ? 0 : 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isConnected ? Icons.check_circle : Icons.send,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  isConnected ? "Telegram Connected" : "Connect Telegram",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         ),

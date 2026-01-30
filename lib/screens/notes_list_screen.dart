@@ -3,13 +3,16 @@ import '../models/note.dart';
 import '../services/database_service.dart';
 import '../widgets/note_card.dart';
 import 'create_note_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
+import '../services/pdf_service.dart';
 
 class NotesListScreen extends StatefulWidget {
   final DatabaseService dbServices;
 
   const NotesListScreen({
     super.key,
-    required this.dbServices, required DatabaseService dbService,
+    required this.dbServices,
   });
 
   @override
@@ -31,7 +34,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
 
   Future<void> fetchNotes() async {
     final fetchedNotes = await widget.dbServices.getNotes();
-    // Sort: Pinned notes first
+    
     fetchedNotes.sort((a, b) {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -48,19 +51,183 @@ class _NotesListScreenState extends State<NotesListScreen> {
   void showInfoDialog() {
     showDialog(
       context: context,
-      builder: (_) => const AlertDialog(
-        title: Text("Halaz Notes"),
-        content: Text(
-          "• Create notes using +\n"
-          "• Long press to delete or pin\n"
-          "• Tap to edit\n\n"
-          "Creator: Halaz",
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Theme.of(context).cardColor,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(), // Spacer
+                   const Column(
+                      children: [
+                         Icon(Icons.info_outline, color: Colors.blue, size: 28),
+                         SizedBox(height: 8),
+                         Text(
+                          "About Teshiet\nNotes",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Teshiet Notes is a simple yet powerful note-taking app designed for productivity.",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "Features",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _buildFeatureItem(Icons.edit, "Create & Edit Notes"),
+                _buildFeatureItem(Icons.palette, "Color Coding"),
+                _buildFeatureItem(Icons.label, "Tags"),
+                _buildFeatureItem(Icons.push_pin, "Pin Notes"),
+                _buildFeatureItem(Icons.search, "Search"),
+                _buildFeatureItem(Icons.brightness_6, "Dark/Light Mode"),
+                _buildFeatureItem(Icons.picture_as_pdf, "PDF Export"),
+                const SizedBox(height: 20),
+                const Text(
+                  "How to Use",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _buildUsageItem("Tap + button to create new note"),
+                _buildUsageItem("Tap any note to view/edit"),
+                _buildUsageItem("Long-press note for options"),
+                _buildUsageItem("Use search bar to find notes"),
+                _buildUsageItem("Toggle theme using theme icon"),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                  color: Colors.lightBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.lightBlue.withValues(alpha: 0.3)),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Text(
+                            "PDF Export",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "Long-press any note → Share as PDF → Send to Telegram or any app",
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "Developer",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _buildDeveloperItem(Icons.person, "Developed by Gashu and Haile"),
+                _buildDeveloperItem(Icons.email, "haile_gashu@gmail.com"),
+                _buildDeveloperItem(Icons.verified, "Version 1.0.0"),
+                const SizedBox(height: 20),
+                const Center(
+                  child: Text(
+                    "Made with ❤️",
+                    style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEEE5F4),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text("Close"),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  // ---------------- SEARCH ----------------
+  Widget _buildFeatureItem(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.green),
+          const SizedBox(width: 10),
+          Text(text, style: const TextStyle(fontSize: 15)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUsageItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.blue),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 15))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeveloperItem(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 15))),
+        ],
+      ),
+    );
+  }
+
+  
   void searchNotes(String query) {
     final lowerQuery = query.toLowerCase();
     setState(() {
@@ -74,7 +241,8 @@ class _NotesListScreenState extends State<NotesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F4F9),
+      // Use theme's scaffoldBackgroundColor (defined in ThemeProvider)
+      // backgroundColor: const Color(0xFFF8F4F9), 
       body: CustomScrollView(
         slivers: [
           buildSliverAppBar(),
@@ -91,16 +259,24 @@ class _NotesListScreenState extends State<NotesListScreen> {
     return SliverAppBar(
       expandedHeight: 180,
       pinned: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       actions: [
         IconButton(
           icon: const Icon(Icons.info_outline),
           onPressed: showInfoDialog,
         ),
-        IconButton(
-          icon: const Icon(Icons.nightlight_round),
-          onPressed: () {},
+        Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return IconButton(
+              icon: Icon(
+                themeProvider.isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+              ),
+              onPressed: () {
+                themeProvider.toggleTheme();
+              },
+            );
+          },
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -110,9 +286,11 @@ class _NotesListScreenState extends State<NotesListScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF9D8DF1), Color(0xFFB39DDB)],
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [Colors.grey[900]!, Colors.grey[850]!]
+                  : [const Color(0xFF9D8DF1), const Color(0xFFB39DDB)],
             ),
           ),
         ),
@@ -132,7 +310,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
             hintText: "Search notes...",
             prefixIcon: const Icon(Icons.search),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).cardColor,
             contentPadding: const EdgeInsets.symmetric(vertical: 0),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
@@ -217,11 +395,9 @@ class _NotesListScreenState extends State<NotesListScreen> {
                         ListTile(
                           leading: const Icon(Icons.picture_as_pdf, color: Colors.orange),
                           title: const Text("Export as PDF"),
-                          onTap: () {
+                          onTap: () async {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Export to PDF feature coming soon!")),
-                            );
+                            await PdfService().exportNoteToPdf(note);
                           },
                         ),
                         // DELETE ACTION
@@ -254,7 +430,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
     );
   }
 
-  // ---------------- EMPTY STATE ----------------
+  
   Widget buildEmptyState() {
     return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -274,7 +450,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
     );
   }
 
-  // ---------------- FLOATING ACTION BUTTON ----------------
+  
   Widget buildFABs() {
     return Column(
       mainAxisSize: MainAxisSize.min,

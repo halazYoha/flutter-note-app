@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'telegram_service.dart';
+
 import '../models/note.dart';
 
 class DatabaseService {
@@ -20,28 +22,30 @@ class DatabaseService {
   }
 
   Future<void> sendTelegramNotification(Note note) async {
-    String serverUrl;
-    if (kIsWeb) {
-      // For Web, use localhost
-      serverUrl = 'http://localhost:3000/notify';
-    } else {
-      // For Android Emulator, use 10.0.2.2
-      // If you are on a physical device, you need your computer's LAN IP (e.g., 192.168.1.x)
-      serverUrl = 'http://10.0.2.2:3000/notify';
-    }
+    // Use the dynamic base URL from TelegramService
+    final url = Uri.parse('${TelegramService.baseUrl}/notify'); 
 
-    final url = Uri.parse(serverUrl);
     
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final channelId = prefs.getString(TelegramService.keyConnectedChannelId);
+
+      // Only send if a channel is connected
+      if (channelId == null) {
+        print("No Telegram channel connected. Skipping notification.");
+        return;
+      }
+
       await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: TelegramService.headers,
         body: jsonEncode({
           'title': note.title,
           'content': note.content,
+          'channel_id': channelId,
         }),
       );
-      print("Notification sent to backend");
+      print("Notification sent to backend for channel $channelId");
     } catch (e) {
       print("Failed to send notification to backend: $e");
     }

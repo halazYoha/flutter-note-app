@@ -5,6 +5,7 @@ class Note {
   int color;
   List<String> tags;
   bool pinned;
+  DateTime createdDate;
 
   Note({
     required this.id,
@@ -13,7 +14,8 @@ class Note {
     this.color = 0xFFFFFFFF,
     this.tags = const [],
     this.pinned = false,
-  });
+    DateTime? createdDate,
+  }) : createdDate = createdDate ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {
@@ -22,6 +24,7 @@ class Note {
       'color': color,
       'tags': tags,
       'pinned': pinned,
+      'createdDate': createdDate.toIso8601String(),
     };
   }
 
@@ -33,6 +36,9 @@ class Note {
       color: map['color'] ?? 0xFFFFFFFF,
       tags: List<String>.from(map['tags'] ?? []),
       pinned: map['pinned'] ?? false,
+      createdDate: map['createdDate'] != null 
+          ? DateTime.parse(map['createdDate']) 
+          : DateTime.now(),
     );
   }
 }
