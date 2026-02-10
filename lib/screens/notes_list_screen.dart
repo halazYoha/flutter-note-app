@@ -6,6 +6,7 @@ import 'create_note_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/pdf_service.dart';
+import 'package:share_plus/share_plus.dart';
 
 class NotesListScreen extends StatefulWidget {
   final DatabaseService dbServices;
@@ -391,13 +392,26 @@ class _NotesListScreenState extends State<NotesListScreen> {
                             fetchNotes();
                           },
                         ),
-                        // EXPORT PDF
+                        
                         ListTile(
                           leading: const Icon(Icons.picture_as_pdf, color: Colors.orange),
                           title: const Text("Export as PDF"),
                           onTap: () async {
                             Navigator.pop(context);
                             await PdfService().exportNoteToPdf(note);
+                          },
+                        ),
+                        // SHARE LINK ACTION
+                        ListTile(
+                          leading: const Icon(Icons.link, color: Colors.purple),
+                          title: const Text("Share Link"),
+                          onTap: () async {
+                            Navigator.pop(context);
+                            final link = 'https://flutter-note-app-1.onrender.com/note/${note.id}';
+                            await Share.share(
+                              link,
+                              subject: note.title,
+                            );
                           },
                         ),
                         // DELETE ACTION

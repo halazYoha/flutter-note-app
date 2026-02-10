@@ -77,4 +77,15 @@ class DatabaseService {
     final url = Uri.parse('$baseUrl/notes/${note.id}.json');
     await http.put(url, body: jsonEncode(note.toMap()));
   }
+
+  /// Fetch a single note by its Firebase key
+  Future<Note?> getNoteById(String noteId) async {
+    final url = Uri.parse('$baseUrl/notes/$noteId.json');
+    final res = await http.get(url);
+    if (res.statusCode == 200 && res.body != 'null') {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return Note.fromMap(noteId, data);
+    }
+    return null;
+  }
 }

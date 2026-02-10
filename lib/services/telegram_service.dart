@@ -11,15 +11,10 @@ class TelegramService {
 
 
   // Base URL for your backend
+  // Base URL for your backend
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:3000';
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // Public tunnel URL for cellular data (Serveo)
-      return 'https://116063f262ff052c-213-55-102-49.serveousercontent.com';
-    } else {
-      return 'http://localhost:3000'; // iOS/Desktop
-    }
+    // Return the production Render.com URL for all platforms
+    return 'https://flutter-note-app-1.onrender.com';
   }
 
   static Map<String, String> get headers => {

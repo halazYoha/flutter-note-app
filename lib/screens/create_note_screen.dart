@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/note.dart';
 import '../services/database_service.dart';
 import '../services/pdf_service.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../providers/telegram_provider.dart';
 import 'connect_telegram_screen.dart';
@@ -122,6 +123,19 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         leading: const BackButton(),
         title: const Text("New Note"),
         actions: [
+          // Share link button (only for existing notes)
+          if (widget.note != null)
+            IconButton(
+              icon: const Icon(Icons.share),
+              tooltip: 'Share Link',
+              onPressed: () async {
+                final link = 'https://flutter-note-app-1.onrender.com/note/${widget.note!.id}';
+                await Share.share(
+                  link,
+                  subject: widget.note!.title,
+                );
+              },
+            ),
           TextButton.icon(
             onPressed: () async {
               final currentNote = Note(
