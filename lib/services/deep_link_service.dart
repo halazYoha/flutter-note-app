@@ -1,5 +1,6 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../models/note.dart';
 import '../services/database_service.dart';
 import '../screens/create_note_screen.dart';
@@ -29,10 +30,18 @@ class DeepLinkService {
   }
 
   void _handleDeepLink(Uri uri) {
-    // Expected format: noteapp://note/<noteId>
+    // Handle app scheme deep links: noteapp://note/<noteId>
     if (uri.scheme == 'noteapp' && uri.host == 'note' && uri.pathSegments.isNotEmpty) {
       final noteId = uri.pathSegments.first;
       _openNote(noteId);
+    }
+    // Handle Play Store referrer: note_<noteId>
+    else if (uri.scheme == 'https' && uri.host == 'play.google.com') {
+      final referrer = uri.queryParameters['referrer'];
+      if (referrer != null && referrer.startsWith('note_')) {
+        final noteId = referrer.substring(5); // Remove 'note_' prefix
+        _openNote(noteId);
+      }
     }
   }
 
@@ -54,9 +63,25 @@ class DeepLinkService {
             ),
           );
         }
+      } else {
+        debugPrint('Note not found: $noteId');
+        _showErrorSnackBar('Note not found');
       }
     } catch (e) {
       debugPrint('Error opening note from deep link: $e');
+      _showErrorSnackBar('Failed to open note');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

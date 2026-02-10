@@ -129,9 +129,23 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               icon: const Icon(Icons.share),
               tooltip: 'Share Link',
               onPressed: () async {
-                final link = 'https://flutter-note-app-1.onrender.com/note/${widget.note!.id}';
+                // Generate app scheme deep link
+                final appLink = 'noteapp://note/${widget.note!.id}';
+                
+                // Generate web fallback link with Play Store redirect
+                final webLink = 'https://play.google.com/store/apps/details?id=com.example.note_app&referrer=note_${widget.note!.id}';
+                
+                // Create shareable content with both links
+                final shareContent = '''
+📝 ${widget.note!.title}
+
+📱 Open in app: $appLink
+
+🌐 Or get the app first: $webLink
+                ''';
+                
                 await Share.share(
-                  link,
+                  shareContent.trim(),
                   subject: widget.note!.title,
                 );
               },
