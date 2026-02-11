@@ -1,9 +1,7 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import '../models/note.dart';
 import '../services/database_service.dart';
-import '../screens/create_note_screen.dart';
+import '../screens/notes_list_screen.dart';
 
 class DeepLinkService {
   final AppLinks _appLinks = AppLinks();
@@ -32,44 +30,43 @@ class DeepLinkService {
   void _handleDeepLink(Uri uri) {
     // Handle app scheme deep links: noteapp://note/<noteId>
     if (uri.scheme == 'noteapp' && uri.host == 'note' && uri.pathSegments.isNotEmpty) {
-      final noteId = uri.pathSegments.first;
-      _openNote(noteId);
+      _navigateToNotesList();
     }
     // Handle Play Store referrer: note_<noteId>
     else if (uri.scheme == 'https' && uri.host == 'play.google.com') {
       final referrer = uri.queryParameters['referrer'];
       if (referrer != null && referrer.startsWith('note_')) {
-        final noteId = referrer.substring(5); // Remove 'note_' prefix
-        _openNote(noteId);
+        _navigateToNotesList();
       }
     }
   }
 
-  Future<void> _openNote(String noteId) async {
+  /// Navigate to the Notes List screen when a deep link is received
+  Future<void> _navigateToNotesList() async {
     try {
-      final note = await dbService.getNoteById(noteId);
-      if (note != null) {
-        // Wait for navigator to be ready
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        final navigator = navigatorKey.currentState;
-        if (navigator != null) {
-          navigator.push(
-            MaterialPageRoute(
-              builder: (_) => CreateNoteScreen(
-                dbService: dbService,
-                note: note,
-              ),
+      // Wait for navigator to be ready
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final navigator = navigatorKey.currentState;
+      if (navigator != null) {
+        // Pop all routes and go to root (Notes List Screen)
+        navigator.popUntil((route) => route.isFirst);
+
+        // Show a snackbar to indicate the app was opened from a shared link
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Opened from a shared note link'),
+              backgroundColor: Color(0xFF6A5AE0),
+              duration: Duration(seconds: 2),
             ),
           );
         }
-      } else {
-        debugPrint('Note not found: $noteId');
-        _showErrorSnackBar('Note not found');
       }
     } catch (e) {
-      debugPrint('Error opening note from deep link: $e');
-      _showErrorSnackBar('Failed to open note');
+      debugPrint('Error handling deep link: $e');
+      _showErrorSnackBar('Failed to open the app from link');
     }
   }
 
